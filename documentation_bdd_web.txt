@@ -1,0 +1,148 @@
+# Documentation technique de la base de données et intégration web
+
+## 0. Fonctionnalités et règles de gestion
+
+### Fonctionnalités de l'application mobile
+- Création, édition, suppression de notes en Markdown
+- Organisation des notes par catégories
+- Comparaison de notes (visualisation des différences)
+- Gestion des rappels et notifications
+- Synchronisation locale/cloud (offline/online)
+- Gestion des statuts de synchronisation (créée, modifiée, supprimée, synchronisée)
+- Sélection de notes par date, catégorie, type
+- Interface utilisateur moderne (mode sombre/clair, grille flexible)
+- Gestion des actions en attente (offline)
+- Sécurité par authentification utilisateur
+- Support évolutif des fichiers joints et tags
+
+### Fonctionnalités attendues pour l'application web
+- Accès à toutes les notes de l’utilisateur (CRUD complet)
+- Interface d’édition Markdown compatible mobile
+- Gestion des catégories, tags, rappels
+- Synchronisation en temps réel avec la base Supabase
+- Gestion des statuts et conflits de synchronisation
+- Visualisation et comparaison de notes
+- Gestion des actions en attente (offline/online)
+- Authentification sécurisée (identique au mobile)
+- Respect des règles de gestion et de la structure de la base
+- Support évolutif pour fichiers joints, tags, etc.
+
+### Règles de gestion principales
+- Une note appartient à un utilisateur (`user_id` obligatoire)
+- Les statuts de note sont strictement contrôlés : 'created', 'synced', 'modified', 'deleted'
+- Les opérations sur les notes (création, modification, suppression) doivent être synchronisées entre mobile et web
+- Les actions en attente sont traitées dès que la connexion est rétablie
+- Les dates sont stockées au format ISO ou timestamp pour la compatibilité
+- Les catégories et types de notes sont normalisés pour faciliter le filtrage
+- Les accès à la base sont sécurisés par des règles RLS (Row Level Security)
+- Les migrations de la base doivent être synchronisées entre les plateformes
+- Les fichiers joints et tags sont optionnels mais doivent respecter la structure évolutive
+- Toute modification de la structure doit être documentée et migrée sur les deux plateformes
+
+---
+
+## 1. Structure de la base de données (Supabase)
+
+### Table principale : `notes`
+
+| Colonne                      | Type      | Description                                                      |
+|------------------------------|-----------|------------------------------------------------------------------|
+| supabase_id                  | TEXT      | Identifiant unique Supabase (clé primaire)                       |
+| id                           | TEXT      | Identifiant local WatermelonDB                                   |
+| nom_note                     | TEXT      | Titre de la note                                                 |
+| contenu_note                 | TEXT      | Contenu Markdown de la note                                      |
+| date_creation                | TEXT      | Date de création (format ISO ou timestamp)                       |
+| date_heure_note              | TEXT      | Date et heure associée à la note                                 |
+| date_sync                    | TEXT      | Date de dernière synchronisation                                 |
+| categorie                    | TEXT      | Catégorie de la note                                             |
+| typenote                     | TEXT      | Type de note (ex: "normal", "rappel", etc.)                     |
+| visible_pour_date_seulement  | BOOLEAN   | Si la note est visible uniquement pour une date                  |
+| rappel                       | TEXT      | Date/heure de rappel (optionnel)                                 |
+| synced                       | BOOLEAN   | Indique si la note est synchronisée                              |
+| status                       | TEXT      | Statut de la note ('created', 'synced', 'modified', 'deleted')   |
+| user_id                      | TEXT      | Identifiant de l'utilisateur                                     |
+
+#### Contraintes et index
+- `supabase_id` est la clé primaire.
+- Index sur `user_id` et `supabase_id` pour accélérer les requêtes.
+- Contrainte sur `status` pour garantir la cohérence des états.
+
+### Table secondaire : `waiting_action`
+
+| Colonne      | Type    | Description                                 |
+|--------------|---------|---------------------------------------------|
+| type_action  | TEXT    | Type d'action à effectuer                   |
+| note         | TEXT    | Note concernée (stockée en JSON stringifié) |
+| time         | NUMBER  | Timestamp de l'action                       |
+
+---
+
+## 2. Synchronisation mobile/web
+
+- **WatermelonDB** (mobile) : base locale, synchronisée avec Supabase.
+- **Supabase** (cloud) : base centrale, accessible par l’application mobile et web.
+- Les champs et types sont identiques pour faciliter la synchronisation.
+- Les statuts (`status`) permettent de gérer les conflits et la synchronisation.
+
+---
+
+## 3. Points d’intégration pour le web
+
+- Utiliser Supabase JS/TS SDK pour accéder à la table `notes`.
+- Authentification par utilisateur (`user_id`).
+- Les opérations CRUD (Create, Read, Update, Delete) sont identiques à celles du mobile.
+- Les champs de la table doivent être respectés pour garantir la compatibilité.
+- Les actions en attente (`waiting_action`) peuvent être gérées côté web pour la synchronisation offline/online.
+
+---
+
+## 4. Bonnes pratiques pour le développement web
+
+- Respecter la structure des tables et des types.
+- Gérer les statuts de synchronisation pour éviter les conflits.
+- Utiliser des index pour optimiser les requêtes sur `user_id` et `supabase_id`.
+- Stocker les dates au format ISO ou timestamp pour la compatibilité.
+- Utiliser le même système d’authentification que l’application mobile.
+
+---
+
+## 5. Exemple de requête Supabase (JS/TS)
+
+```typescript
+// Récupérer toutes les notes d’un utilisateur
+const { data, error } = await supabase
+  .from('notes')
+  .select('*')
+  .eq('user_id', userId);
+```
+
+---
+
+## 6. Synchronisation offline/online
+
+- Les notes créées offline sont stockées localement puis synchronisées dès que possible.
+- Les actions en attente sont enregistrées dans `waiting_action` et traitées lors de la reconnexion.
+
+---
+
+## 7. Sécurité
+
+- Les accès à la base Supabase doivent être sécurisés par des règles RLS (Row Level Security).
+- Les opérations doivent être authentifiées par utilisateur.
+
+---
+
+## 8. Évolutivité
+
+- La structure permet d’ajouter facilement des champs ou des tables (ex: tags, fichiers joints).
+- Les migrations doivent être synchronisées entre mobile et web.
+
+---
+
+## 9. Références
+- Voir le fichier `sqls/create_table_notes_in_supabase.sql` pour la structure SQL.
+- Voir le fichier `src/database/schema.ts` pour la structure WatermelonDB.
+
+---
+
+Ce document est à destination des développeurs web et mobile pour garantir la compatibilité et la cohérence des données entre les plateformes.

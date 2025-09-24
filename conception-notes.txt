@@ -1,0 +1,44 @@
+Application de prise de notes personaliséee
+
+
+
+Developpé en react native
+
+
+----------------------------------------DATABASES--------------------------
+NOTES:
+- id
+- nom_note: unique
+- contenu_note
+- date_creation
+- categorie
+- synced
+- date_sync
+- date_heure_note
+- visible_pour_date_seulement
+- rappel
+- typeNote
+
+
+
+react-native-community net info.
+
+--------------------------------EDITEUR DE NOTES---------------------------:
+--MarkDown:
+react-native-markdown-display
++
+Custom react native markdown editor
+regarder pour l'exemple: https://stackedit.io/app#
+
+--Editor.js
+Webview
++
+Editor.js
++
+Pour la render dans react native, utilise aussiun Webview?
+ou
+@fintables/react-native-editorjs-viewer
+
+yarn add @react-native-community/netinfo react-native-markdown-display react-native-paper react-native-vector-icons react-native-svg react-native-webview
+
+yarn add --dev react-native-svg-transformer

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "f3a1d3d5-7b9f-4e2f-a5d1-8e32ff2eec10",
+    "nom_note": "Objectifs_hebdo",
+    "contenu_note": "## Objectifs de la semaine\n- [x] Finaliser l'intégration\n- [ ] Tester les formulaires\n- [ ] Rédiger la documentation",
+    "date_creation": "2025-06-17T10:00:00Z",
+    "categorie": ["Travail"],
+    "synced": true,
+    "date_sync": "2025-06-17T10:05:00Z",
+    "date_heure_note": "2025-06-17T10:00:00Z",
+    "visible_pour_date_seulement": false,
+    "rappel": null,
+    "typeNote": "checklist"
+  },
+  {
+    "id": "bd83091a-c801-45e1-aec4-7a1e57ef57b9",
+    "nom_note": "Recette_famille",
+    "contenu_note": "# Recette de Mofo Anana\nIngrédients:\n- Farine\n- Eau\n- Sel\n- Anana (brèdes)\n\n### Étapes\n1. Mélanger les ingrédients\n2. Faire frire jusqu'à doré",
+    "date_creation": "2025-06-16T09:30:00Z",
+    "categorie": ["Cuisine"],
+    "synced": false,
+    "date_sync": null,
+    "date_heure_note": "2025-06-16T09:30:00Z",
+    "visible_pour_date_seulement": true,
+    "rappel": null,
+    "typeNote": "texte"
+  },
+  {
+    "id": "7e4deeb0-3d8d-420c-98b7-28e543d4d5be",
+    "nom_note": "Citation_inspiration",
+    "contenu_note": "> “La connaissance s'acquiert par l'expérience, tout le reste n'est que de l'information.” — Albert Einstein",
+    "date_creation": "2025-06-15T08:00:00Z",
+    "categorie": ["Motivation"],
+    "synced": true,
+    "date_sync": "2025-06-15T08:10:00Z",
+    "date_heure_note": "2025-06-15T08:00:00Z",
+    "visible_pour_date_seulement": false,
+    "rappel": null,
+    "typeNote": "citation"
+  },
+  {
+    "id": "114c71e5-2b9a-4ef4-8ff8-9a7e44954f77",
+    "nom_note": "Meeting_20juin",
+    "contenu_note": "### Réunion avec l’équipe\n- Sujet: Avancement projet\n- Date: **20 Juin 2025**\n- Heure: *14h30*\n- Lieu: Google Meet\n\n> Penser à préparer le support.",
+    "date_creation": "2025-06-14T14:10:00Z",
+    "categorie": ["Réunion"],
+    "synced": false,
+    "date_sync": null,
+    "date_heure_note": "2025-06-20T14:30:00Z",
+    "visible_pour_date_seulement": false,
+    "rappel": "2025-06-20T14:00:00Z",
+    "typeNote": "événement"
+  },
+  {
+    "id": "9e927c0e-cf9a-44e4-a5e4-2f78f9469d9b",
+    "nom_note": "Idée_projet_AI",
+    "contenu_note": "# Idée de Projet\nCréer un assistant vocal offline utilisant :\n- Whisper\n- TTS (Google ou Coqui)\n- Interaction via interface web simple",
+    "date_creation": "2025-06-13T11:11:00Z",
+    "categorie": ["Projet"],
+    "synced": true,
+    "date_sync": "2025-06-13T11:20:00Z",
+    "date_heure_note": "2025-06-13T11:11:00Z",
+    "visible_pour_date_seulement": false,
+    "rappel": null,
+    "typeNote": "idée"
+  },
+  {
+    "id": "d6a034fb-8fbe-4cb2-bd83-c9b134c91291",
+    "nom_note": "Shopping_list_weekend",
+    "contenu_note": "## À acheter\n- Pain\n- Lait\n- Œufs\n- Riz\n- Charbon",
+    "date_creation": "2025-06-14T07:45:00Z",
+    "categorie": ["Courses"],
+    "synced": false,
+    "date_sync": null,
+    "date_heure_note": "2025-06-21T08:00:00Z",
+    "visible_pour_date_seulement": true,
+    "rappel": "2025-06-21T07:00:00Z",
+    "typeNote": "liste"
+  },
+  {
+    "id": "c1eb21d2-0982-4704-80b4-472a0a1f82c7",
+    "nom_note": "Note_secrete",
+    "contenu_note": "```js\nconst secret = 'ne pas partager';\nalert(secret);\n```",
+    "date_creation": "2025-06-12T20:20:00Z",
+    "categorie": ["Perso"],
+    "synced": true,
+    "date_sync": "2025-06-12T20:21:00Z",
+    "date_heure_note": "2025-06-12T20:20:00Z",
+    "visible_pour_date_seulement": false,
+    "rappel": null,
+    "typeNote": "code"
+  }
+]
