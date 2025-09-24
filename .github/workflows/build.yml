@@ -89,13 +89,7 @@ jobs:
       run: yarn android:uat-release-apk
       env:
         ENVFILE: .env.uat
-        
-    - name: Build Prod Release APK (if main branch)
-      if: github.ref == 'refs/heads/main'
-      run: yarn android:prod-release-apk
-      env:
-        ENVFILE: .env.prod
-        
+
     - name: Upload UAT APK as artifact
       uses: actions/upload-artifact@v4
       with:
@@ -141,61 +135,7 @@ jobs:
         latest: true  # Marque ce release comme "latest"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Rename APK files for fixed URLs
-      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-      run: |
-        cd android/app/build/outputs/apk/uat/release
-        for file in *.apk; do
-          mv "$file" "app-uat-release.apk"
-        done
-        
-        cd ../dev/debug
-        for file in *.apk; do
-          mv "$file" "app-dev-debug.apk"
-        done
-        
-    # - name: Create Production Release with Latest Tag
-    #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    #   uses: softprops/action-gh-release@v1
-    #   id: create_prod_release
-    #   with:
-    #     tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}-prod
-    #     name: "Production Release ${{ steps.tag.outputs.RELEASE_TAG }}"
-    #     body: |
-    #       🚀 **Version de Production** - **LATEST**
-          
-    #       **Changements:**
-    #       - Build de production depuis la branche main
-    #       - Commit: ${{ github.sha }}
-    #       - Auteur: ${{ github.actor }}
-          
-    #       **Lien de téléchargement fixe:**
-    #       - 📱 **[APK Production Release (latest)](https://github.com/${{ github.repository }}/releases/latest/download/app-prod-release.apk)**
-          
-    #       **Installation:**
-    #       1. Téléchargez l'APK de production via le lien ci-dessus
-    #       2. Activez "Sources inconnues" sur votre appareil Android
-    #       3. Installez l'APK
-          
-    #       ---
-    #       *Build de production généré le $(date +'%Y-%m-%d à %H:%M:%S')*
-    #     files: |
-    #       android/app/build/outputs/apk/prod/release/*.apk
-    #     draft: false
-    #     prerelease: false
-    #     latest: true  # Marque ce release comme "latest"
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-    # - name: Rename Prod APK for fixed URL
-    #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    #   run: |
-    #     cd android/app/build/outputs/apk/prod/release
-    #     for file in *.apk; do
-    #       mv "$file" "app-prod-release.apk"
-    #     done
-        
+
     - name: Comment PR with APKs
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
