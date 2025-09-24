@@ -31,7 +31,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18.18.0' # Version recommandée pour RN 0.74.5
+        node-version: '18.18.0'
         cache: 'yarn'
         
     - name: Enable Yarn
@@ -42,7 +42,6 @@ jobs:
 
     - name: Create environment files for CI
       run: |
-        # Créer les fichiers .env pour chaque environnement
         echo "SUPABASE_URL=${{ secrets.SUPABASE_URL_DEV }}" > .env.dev
         echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY_DEV }}" >> .env.dev
         echo "CRYPTO_JS_KEY=${{ secrets.CRYPTO_JS_KEY }}" >> .env.dev
@@ -107,46 +106,31 @@ jobs:
         path: android/app/build/outputs/apk/uat/release/*.apk
         retention-days: 30
         
-    - name: Upload Prod APK as artifact (if main branch)
-      if: github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-prod-release
-        path: android/app/build/outputs/apk/prod/release/*.apk
-        retention-days: 30
-        
-    - name: Upload Dev Debug APK as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-dev-debug
-        path: android/app/build/outputs/apk/dev/debug/*.apk
-        retention-days: 7
-        
     - name: Generate release tag
       id: tag
       run: |
         echo "RELEASE_TAG=v$(date +'%Y.%m.%d')-build-${{ github.run_number }}" >> $GITHUB_OUTPUT
         
-    - name: Create Release
+    - name: Create Release with Latest Tag
       if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
       uses: softprops/action-gh-release@v1
+      id: create_release
       with:
         tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
         name: "Release ${{ steps.tag.outputs.RELEASE_TAG }}"
         body: |
-          🚀 **Nouvelle version automatique**
+          🚀 **Nouvelle version automatique** - **LATEST**
           
           **Changements:**
           - Build automatique depuis la branche develop
           - Commit: ${{ github.sha }}
           - Auteur: ${{ github.actor }}
           
-          **Versions disponibles:**
-          - 📱 **UAT Release**: Pour les tests utilisateurs
-          - 🔧 **Dev Debug**: Version de développement avec logs
+          **Liens de téléchargement fixes:**
+          - 📱 **[APK UAT(Test) Release (latest)](https://github.com/${{ github.repository }}/releases/latest/download/app-uat-release.apk)**
           
           **Installation:**
-          1. Téléchargez l'APK correspondant ci-dessous
+          1. Téléchargez l'APK correspondant via le lien ci-dessus
           2. Activez "Sources inconnues" sur votre appareil Android
           3. Installez l'APK
           
@@ -157,37 +141,64 @@ jobs:
           android/app/build/outputs/apk/dev/debug/*.apk
         draft: false
         prerelease: true
+        latest: true  # Marque ce release comme "latest"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: Create Production Release
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}-prod
-        name: "Production Release ${{ steps.tag.outputs.RELEASE_TAG }}"
-        body: |
-          🚀 **Version de Production**
+    - name: Rename APK files for fixed URLs
+      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      run: |
+        cd android/app/build/outputs/apk/uat/release
+        for file in *.apk; do
+          mv "$file" "app-uat-release.apk"
+        done
+        
+        cd ../dev/debug
+        for file in *.apk; do
+          mv "$file" "app-dev-debug.apk"
+        done
+        
+    # - name: Create Production Release with Latest Tag
+    #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    #   uses: softprops/action-gh-release@v1
+    #   id: create_prod_release
+    #   with:
+    #     tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}-prod
+    #     name: "Production Release ${{ steps.tag.outputs.RELEASE_TAG }}"
+    #     body: |
+    #       🚀 **Version de Production** - **LATEST**
           
-          **Changements:**
-          - Build de production depuis la branche main
-          - Commit: ${{ github.sha }}
-          - Auteur: ${{ github.actor }}
+    #       **Changements:**
+    #       - Build de production depuis la branche main
+    #       - Commit: ${{ github.sha }}
+    #       - Auteur: ${{ github.actor }}
           
-          **Installation:**
-          1. Téléchargez l'APK de production ci-dessous
-          2. Activez "Sources inconnues" sur votre appareil Android
-          3. Installez l'APK
+    #       **Lien de téléchargement fixe:**
+    #       - 📱 **[APK Production Release (latest)](https://github.com/${{ github.repository }}/releases/latest/download/app-prod-release.apk)**
           
-          ---
-          *Build de production généré le $(date +'%Y-%m-%d à %H:%M:%S')*
-        files: |
-          android/app/build/outputs/apk/prod/release/*.apk
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+    #       **Installation:**
+    #       1. Téléchargez l'APK de production via le lien ci-dessus
+    #       2. Activez "Sources inconnues" sur votre appareil Android
+    #       3. Installez l'APK
+          
+    #       ---
+    #       *Build de production généré le $(date +'%Y-%m-%d à %H:%M:%S')*
+    #     files: |
+    #       android/app/build/outputs/apk/prod/release/*.apk
+    #     draft: false
+    #     prerelease: false
+    #     latest: true  # Marque ce release comme "latest"
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    # - name: Rename Prod APK for fixed URL
+    #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    #   run: |
+    #     cd android/app/build/outputs/apk/prod/release
+    #     for file in *.apk; do
+    #       mv "$file" "app-prod-release.apk"
+    #     done
+        
     - name: Comment PR with APKs
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
