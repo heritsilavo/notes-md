@@ -90,6 +90,24 @@ jobs:
       env:
         ENVFILE: .env.uat
 
+    # Nouveau: Build Production APK
+    - name: Build Production Release APK
+      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      run: yarn android:prod-release-apk
+      env:
+        ENVFILE: .env.prod
+
+    # Nouveau: Upload vers Google Drive
+    - name: Upload Production APK to Google Drive
+      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      uses: adityak74/google-drive-upload-git-action@main
+      with:
+        credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+        filename: "android/app/build/outputs/apk/prod/release/app-prod-release.apk"
+        folderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        name: "notemd-prod-v${{ github.run_number }}.apk"
+        overwrite: "true"
+
     - name: Upload UAT APK as artifact
       uses: actions/upload-artifact@v4
       with:
@@ -132,7 +150,7 @@ jobs:
           android/app/build/outputs/apk/dev/debug/*.apk
         draft: false
         prerelease: false
-        make_latest: true  # Marque ce release comme "latest"
+        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
