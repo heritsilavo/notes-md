@@ -80,9 +80,6 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x ./android/gradlew
       
-    - name: Clean project
-      run: yarn android:clean || (cd android && ./gradlew clean && cd ..)
-      
     - name: Build Dev Debug APK
       run: yarn copy-env-dev && cd android && ./gradlew assembleDevDebug && cd .. && echo 'find APK in android/app/build/outputs/apk/dev/debug'
       env:
