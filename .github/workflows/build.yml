@@ -131,8 +131,8 @@ jobs:
           android/app/build/outputs/apk/uat/release/*.apk
           android/app/build/outputs/apk/dev/debug/*.apk
         draft: false
-        prerelease: true
-        latest: true  # Marque ce release comme "latest"
+        prerelease: false
+        make_latest: true  # Marque ce release comme "latest"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
