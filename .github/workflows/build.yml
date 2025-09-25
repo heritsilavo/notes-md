@@ -96,14 +96,14 @@ jobs:
 
     # Nouveau: Build Production APK
     - name: Build Production Release APK
-      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      # if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
       run: yarn android:prod-release-apk
       env:
         ENVFILE: .env.prod
 
     # Nouveau: Upload vers Google Drive
     - name: Upload Production APK to Google Drive
-      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      # if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
       uses: adityak74/google-drive-upload-git-action@main
       with:
         credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
