@@ -80,24 +80,50 @@ jobs:
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-yarn-
+
+    # A SUPPRIMER - Cache temporaire des APKs construites
+    - name: Cache APK builds (TEMPORAIRE)
+      uses: actions/cache@v3
+      id: apk-cache
+      with:
+        path: |
+          android/app/build/outputs/apk/dev/debug/*.apk
+          android/app/build/outputs/apk/uat/release/*.apk
+          android/app/build/outputs/apk/prod/release/*.apk
+        key: apk-builds-${{ hashFiles('android/**/*.gradle', 'android/**/*.java', 'android/**/*.kt', 'src/**/*', 'package.json') }}
+        restore-keys: |
+          apk-builds-
           
     - name: Make gradlew executable
       run: chmod +x ./android/gradlew
-      
-    - name: Build Dev Debug APK
+
+    # A SUPPRIMER - Construction conditionnelle des APKs
+    - name: Build Dev Debug APK (if not cached)
+      if: steps.apk-cache.outputs.cache-hit != 'true'
       run: yarn copy-env-dev && cd android && ./gradlew assembleDevDebug && cd .. && echo 'find APK in android/app/build/outputs/apk/dev/debug'
       env:
         ENVFILE: .env.dev
         
-    - name: Build UAT Release APK
+    - name: Build UAT Release APK (if not cached)
+      if: steps.apk-cache.outputs.cache-hit != 'true'
       run: yarn android:uat-release-apk
       env:
         ENVFILE: .env.uat
 
-    - name: Build Production Release APK
+    - name: Build Production Release APK (if not cached)
+      if: steps.apk-cache.outputs.cache-hit != 'true'
       run: yarn android:prod-release-apk
       env:
         ENVFILE: .env.prod
+
+    # A SUPPRIMER - Message informatif sur le cache
+    - name: Cache status info
+      run: |
+        if [ "${{ steps.apk-cache.outputs.cache-hit }}" = "true" ]; then
+          echo "✅ APKs récupérées depuis le cache - pas de rebuild nécessaire"
+        else
+          echo "🔨 APKs construites et mises en cache"
+        fi
 
     - name: Verify Production APK exists
       run: |
