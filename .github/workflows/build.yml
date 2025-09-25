@@ -125,58 +125,62 @@ jobs:
         fi
 
     # SOLUTION FIABLE: Script Python avec Google Drive API
-    - name: Upload Production APK to Google Drive
+    - name: Upload Production APK to Google Drive (OAuth)
       run: |
-        # Installation des dépendances Python
         pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
         
-        # Script Python pour l'upload
-        cat > upload_to_drive.py << 'EOF'
-        import json
+        cat > upload_to_drive_oauth.py << 'EOF'
+        import pickle
         import os
-        from google.oauth2 import service_account
+        from google.auth.transport.requests import Request
+        from google_auth_oauthlib.flow import InstalledAppFlow
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
         
+        # Scope pour l'accès en lecture/écriture à Drive
+        SCOPES = ['https://www.googleapis.com/auth/drive.file']
+        
+        def get_authenticated_service():
+            creds = None
+            token_file = '/tmp/token.pickle'
+            
+            # Charger les tokens existants
+            if os.path.exists(token_file):
+                with open(token_file, 'rb') as token:
+                    creds = pickle.load(token)
+            
+            # Si pas de tokens valides, demander l'authentification
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    # Sauvegarder les credentials OAuth
+                    with open('/tmp/oauth_credentials.json', 'w') as f:
+                        f.write('${{ secrets.GOOGLE_OAUTH_CREDENTIALS }}')
+                    
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        '/tmp/oauth_credentials.json', SCOPES)
+                    creds = flow.run_local_server(port=0)
+                
+                # Sauvegarder les tokens pour la prochaine fois
+                with open(token_file, 'wb') as token:
+                    pickle.dump(creds, token)
+            
+            return build('drive', 'v3', credentials=creds)
+        
         def upload_file():
-            # Chargement des credentials
-            with open('/tmp/google_credentials.json', 'r') as f:
-                credentials_info = json.load(f)
-            
-            credentials = service_account.Credentials.from_service_account_info(
-                credentials_info, 
-                scopes=['https://www.googleapis.com/auth/drive']
-            )
-            
-            # Construction du service Drive
-            service = build('drive', 'v3', credentials=credentials)
-            
-            # Paramètres du fichier
+            service = get_authenticated_service()
             file_path = 'android/app/build/outputs/apk/prod/release/app-prod-release.apk'
             file_name = f'notemd-prod-v{os.environ.get("GITHUB_RUN_NUMBER", "unknown")}.apk'
             folder_id = os.environ.get('FOLDER_ID')
             
-            # Métadonnées du fichier
             file_metadata = {
                 'name': file_name,
                 'parents': [folder_id] if folder_id else []
             }
             
-            # Upload du fichier
             media = MediaFileUpload(file_path, resumable=True)
             
-            # Vérifier s'il existe déjà un fichier avec le même nom
-            query = f"name='{file_name}' and parents in '{folder_id}'" if folder_id else f"name='{file_name}'"
-            results = service.files().list(q=query).execute()
-            files = results.get('files', [])
-            
-            if files:
-                # Supprimer l'ancien fichier
-                for file in files:
-                    service.files().delete(fileId=file['id']).execute()
-                    print(f"Ancien fichier supprimé: {file['name']}")
-            
-            # Créer le nouveau fichier
             file = service.files().create(
                 body=file_metadata,
                 media_body=media,
@@ -185,19 +189,16 @@ jobs:
             
             print(f"✅ Fichier uploadé avec succès!")
             print(f"   Nom: {file.get('name')}")
-            print(f"   ID: {file.get('id')}")
             print(f"   Lien: {file.get('webViewLink')}")
         
         if __name__ == '__main__':
             upload_file()
         EOF
         
-        # Exécution du script
-        python upload_to_drive.py
+        python upload_to_drive_oauth.py
       env:
         FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         GITHUB_RUN_NUMBER: ${{ github.run_number }}
-
     - name: Upload UAT APK as artifact
       uses: actions/upload-artifact@v4
       with:
