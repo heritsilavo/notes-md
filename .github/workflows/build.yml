@@ -94,29 +94,69 @@ jobs:
       env:
         ENVFILE: .env.uat
 
-    # Nouveau: Build Production APK
     - name: Build Production Release APK
-      # if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
       run: yarn android:prod-release-apk
       env:
         ENVFILE: .env.prod
 
-    # Nouveau: Upload vers Google Drive
+    - name: Verify Production APK exists
+      run: |
+        if [ -f "android/app/build/outputs/apk/prod/release/app-prod-release.apk" ]; then
+          echo "✅ Production APK found"
+          ls -la android/app/build/outputs/apk/prod/release/
+        else
+          echo "❌ Production APK not found"
+          echo "Available files:"
+          find android/app/build/outputs/apk/ -name "*.apk" -type f
+          exit 1
+        fi
+
+    # CORRECTION: Créer le fichier credentials depuis le secret
+    - name: Create Google Drive credentials file
+      run: |
+        echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}' > /tmp/google_credentials.json
+        echo "Credentials file created"
+        # Vérifier que le fichier est bien formé JSON
+        if jq empty /tmp/google_credentials.json 2>/dev/null; then
+          echo "✅ JSON credentials are valid"
+        else
+          echo "❌ Invalid JSON in credentials"
+          exit 1
+        fi
+
+    # CORRECTION: Utiliser gdrive CLI ou une alternative plus fiable
     - name: Upload Production APK to Google Drive
-      # if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-      uses: adityak74/google-drive-upload-git-action@main
-      with:
-        credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-        filename: "android/app/build/outputs/apk/prod/release/app-prod-release.apk"
-        folderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
-        name: "notemd-prod-v${{ github.run_number }}.apk"
-        overwrite: "true"
+      run: |
+        # Installation de gdrive CLI
+        curl -L https://github.com/glotlabs/gdrive/releases/download/3.9.0/gdrive_linux-x64.tar.gz | tar -xz
+        chmod +x gdrive
+        
+        # Authentification avec le service account
+        ./gdrive account add --service-account /tmp/google_credentials.json
+        
+        # Upload du fichier
+        ./gdrive upload \
+          --parent ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }} \
+          --name "notemd-prod-v${{ github.run_number }}.apk" \
+          --delete-revisions \
+          android/app/build/outputs/apk/prod/release/app-prod-release.apk
+        
+        echo "✅ APK uploaded successfully to Google Drive"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: /tmp/google_credentials.json
 
     - name: Upload UAT APK as artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-uat-release
         path: android/app/build/outputs/apk/uat/release/*.apk
+        retention-days: 30
+        
+    - name: Upload Dev APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-dev-debug
+        path: android/app/build/outputs/apk/dev/debug/*.apk
         retention-days: 30
         
     - name: Generate release tag
@@ -139,8 +179,9 @@ jobs:
           - Commit: ${{ github.sha }}
           - Auteur: ${{ github.actor }}
           
-          **Liens de téléchargement fixes:**
-          - 📱 **[APK UAT(Test) Release (latest)](https://github.com/${{ github.repository }}/releases/latest/download/app-uat-release.apk)**
+          **Liens de téléchargement:**
+          - 📱 **[APK UAT (Test) Release](https://github.com/${{ github.repository }}/releases/latest/download/app-uat-release.apk)**
+          - 🔧 **[APK Dev Debug](https://github.com/${{ github.repository }}/releases/latest/download/app-dev-debug.apk)**
           
           **Installation:**
           1. Téléchargez l'APK correspondant via le lien ci-dessus
@@ -185,7 +226,7 @@ jobs:
           comment += `\n📥 [Télécharger les artifacts](${context.payload.pull_request.html_url}/checks)\n\n`;
           comment += '**Environnements de build:**\n';
           comment += '- 🧪 UAT: Configuration de test utilisateur\n';
-          comment += '- 🔧 Dev: Version de développement avec logs détaillés';
+          comment += '- 🔧 Dev: Version de développement avec logs détaillés\n';
           
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
@@ -193,3 +234,10 @@ jobs:
             repo: context.repo.repo,
             body: comment
           });
+
+    # Nettoyage des fichiers sensibles
+    - name: Cleanup sensitive files
+      if: always()
+      run: |
+        rm -f /tmp/google_credentials.json
+        rm -f .env.*
