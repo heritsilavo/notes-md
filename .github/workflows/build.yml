@@ -182,7 +182,7 @@ jobs:
                 else:
                     # Sauvegarder les credentials OAuth
                     with open('/tmp/oauth_credentials.json', 'w') as f:
-                        f.write('${{ secrets.GOOGLE_OAUTH_CREDENTIALS }}')
+                        f.write('${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}')
                     
                     flow = InstalledAppFlow.from_client_secrets_file(
                         '/tmp/oauth_credentials.json', SCOPES)
