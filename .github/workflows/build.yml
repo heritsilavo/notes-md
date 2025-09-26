@@ -80,21 +80,28 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x ./android/gradlew
       
-    - name: Build Dev Debug APK
-      run: yarn copy-env-dev && cd android && ./gradlew assembleDevDebug && cd .. && echo 'find APK in android/app/build/outputs/apk/dev/debug'
-      env:
-        ENVFILE: .env.dev
-        
     - name: Build UAT Release APK
       run: yarn android:uat-release-apk
       env:
         ENVFILE: .env.uat
+
+    - name: Build Prod Release APK (draft)
+      run: yarn android:prod-release-apk
+      env:
+        ENVFILE: .env.prod
 
     - name: Upload UAT APK as artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-uat-release
         path: android/app/build/outputs/apk/uat/release/*.apk
+        retention-days: 30
+        
+    - name: Upload Prod APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-prod-release
+        path: android/app/build/outputs/apk/prod/release/*.apk
         retention-days: 30
         
     - name: Generate release tag
@@ -129,10 +136,41 @@ jobs:
           *Build automatique généré le $(date +'%Y-%m-%d à %H:%M:%S')*
         files: |
           android/app/build/outputs/apk/uat/release/*.apk
-          android/app/build/outputs/apk/dev/debug/*.apk
         draft: false
         prerelease: false
-        make_latest: true  # Marque ce release comme "latest"
+        make_latest: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Draft Release for Prod
+      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}-prod-draft
+        name: "PROD Draft Release ${{ steps.tag.outputs.RELEASE_TAG }}"
+        body: |
+          🔒 **VERSION PRODUCTION - DRAFT**
+          
+          **Cette release est en mode brouillon et visible uniquement par les mainteneurs.**
+          
+          **Détails:**
+          - Build automatique depuis la branche develop
+          - Commit: ${{ github.sha }}
+          - Auteur: ${{ github.actor }}
+          - Environnement: Production
+          
+          **Pour publier:**
+          1. Vérifier que tout fonctionne correctement
+          2. Cliquer sur "Publish release"
+          3. Supprimer le tag -prod-draft si nécessaire
+          
+          ---
+          *Build automatique généré le $(date +'%Y-%m-%d à %H:%M:%S')*
+        files: |
+          android/app/build/outputs/apk/prod/release/*.apk
+        draft: true
+        prerelease: false
+        make_latest: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -140,6 +178,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
             owner: context.repo.owner,
@@ -148,21 +187,17 @@ jobs:
           });
           
           const uatArtifact = artifacts.artifacts.find(artifact => artifact.name === 'app-uat-release');
-          const devArtifact = artifacts.artifacts.find(artifact => artifact.name === 'app-dev-debug');
           
           let comment = '🤖 **APKs construites avec succès !**\n\n';
           
           if (uatArtifact) {
             comment += '✅ **UAT Release APK** disponible dans les artifacts\n';
           }
-          if (devArtifact) {
-            comment += '✅ **Dev Debug APK** disponible dans les artifacts\n';
-          }
           
           comment += `\n📥 [Télécharger les artifacts](${context.payload.pull_request.html_url}/checks)\n\n`;
           comment += '**Environnements de build:**\n';
           comment += '- 🧪 UAT: Configuration de test utilisateur\n';
-          comment += '- 🔧 Dev: Version de développement avec logs détaillés';
+          comment += '- 🔒 PROD: Version production (draft - visible uniquement par les mainteneurs)\n';
           
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
