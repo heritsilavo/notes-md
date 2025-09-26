@@ -85,21 +85,28 @@ jobs:
       run: chmod +x ./android/gradlew
       
     - name: Build Dev Debug APK
-      if: github.event_name == 'push' # A SUPPRIMER PLUS TARD !!!!!
+      if: github.event_name == 'push' && github.ref == 'refs/heads/develop' # A SUPPRIMER PLUS TARD !!!!!
       run: yarn copy-env-dev && cd android && ./gradlew assembleDevDebug && cd .. && echo 'find APK in android/app/build/outputs/apk/dev/debug'
       env:
         ENVFILE: .env.dev
         
     - name: Build UAT Release APK
-      if: github.event_name == 'push' # A SUPPRIMER PLUS TARD !!!!!
+      if: github.event_name == 'push' && github.ref == 'refs/heads/develop' # A SUPPRIMER PLUS TARD !!!!!
       run: yarn android:uat-release-apk
       env:
         ENVFILE: .env.uat
 
     - name: Build Production Release APK
+      if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
       run: yarn android:prod-release-apk
       env:
         ENVFILE: .env.prod
+
+    ## create dummy android/app/build/outputs/apk/prod/release/app-prod-release.apk just to test google drive upload
+    - name: Create dummy Production APK for testing
+      run: |
+        mkdir -p android/app/build/outputs/apk/prod/release
+        echo "This is a dummy APK file for testing purposes." > android/app/build/outputs/apk/prod/release/app-prod-release.apk
 
     - name: Verify Production APK exists
       run: |
@@ -113,91 +120,126 @@ jobs:
           exit 1
         fi
 
-    # Upload APK to Google Drive using Service Account
+    # SOLUTION: Upload vers Google Drive avec Service Account
     - name: Upload Production APK to Google Drive
       run: |
+        # Installation des dépendances Python
         pip install google-auth google-auth-httplib2 google-api-python-client
         
+        # Création du script d'upload avec Service Account
         cat > upload_to_drive.py << 'EOF'
-        import os
         import json
+        import os
         from google.auth import service_account
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
+        from googleapiclient.errors import HttpError
 
-        # Scope pour l'accès en lecture/écriture à Drive
-        SCOPES = ['https://www.googleapis.com/auth/drive.file']
-
-        def get_authenticated_service():
-            # Récupérer les credentials depuis la variable d'environnement
-            credentials_json = os.environ.get('GOOGLE_DRIVE_CREDENTIALS')
-            if not credentials_json:
-                raise ValueError("GOOGLE_DRIVE_CREDENTIALS environment variable not set")
-            
-            # Parser les credentials JSON
+        def upload_file_to_drive():
             try:
-                credentials_info = json.loads(credentials_json)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in GOOGLE_DRIVE_CREDENTIALS: {e}")
-            
-            # Créer les credentials depuis le service account
-            credentials = service_account.Credentials.from_service_account_info(
-                credentials_info, scopes=SCOPES
-            )
-            
-            return build('drive', 'v3', credentials=credentials)
-
-        def upload_file():
-            try:
-                service = get_authenticated_service()
-                file_path = 'android/app/build/outputs/apk/prod/release/app-prod-release.apk'
+                # Chargement des credentials du service account
+                credentials_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')
+                if not credentials_json:
+                    raise ValueError("GOOGLE_SERVICE_ACCOUNT_KEY environment variable not found")
                 
-                # Vérifier que le fichier existe
+                # Parse des credentials JSON
+                credentials_info = json.loads(credentials_json)
+                
+                # Création des credentials avec les scopes nécessaires
+                SCOPES = ['https://www.googleapis.com/auth/drive.file']
+                credentials = service_account.Credentials.from_service_account_info(
+                    credentials_info, scopes=SCOPES
+                )
+                
+                # Création du service Google Drive
+                service = build('drive', 'v3', credentials=credentials)
+                
+                # Paramètres du fichier à uploader
+                file_path = 'android/app/build/outputs/apk/prod/release/app-prod-release.apk'
+                file_name = f'notemd-prod-v{os.environ.get("GITHUB_RUN_NUMBER", "unknown")}.apk'
+                folder_id = os.environ.get('GOOGLE_DRIVE_FOLDER_ID')
+                
+                # Vérification de l'existence du fichier
                 if not os.path.exists(file_path):
                     raise FileNotFoundError(f"APK file not found: {file_path}")
                 
-                file_name = f'notemd-prod-v{os.environ.get("GITHUB_RUN_NUMBER", "unknown")}.apk'
-                folder_id = os.environ.get('FOLDER_ID')
-                
                 print(f"📤 Uploading {file_name} to Google Drive...")
-                if folder_id:
-                    print(f"📁 Target folder ID: {folder_id}")
+                print(f"   File size: {os.path.getsize(file_path)} bytes")
                 
+                # Métadonnées du fichier
                 file_metadata = {
-                    'name': file_name
+                    'name': file_name,
                 }
                 
-                # Ajouter le parent folder si spécifié
+                # Si un dossier parent est spécifié
                 if folder_id:
                     file_metadata['parents'] = [folder_id]
+                    print(f"   Parent folder ID: {folder_id}")
                 
-                media = MediaFileUpload(file_path, resumable=True)
+                # Upload du fichier
+                media = MediaFileUpload(
+                    file_path, 
+                    resumable=True,
+                    chunksize=1024*1024  # 1MB chunks
+                )
                 
-                file = service.files().create(
+                request = service.files().create(
                     body=file_metadata,
                     media_body=media,
-                    fields='id,name,webViewLink,parents'
-                ).execute()
+                    fields='id,name,webViewLink,size'
+                )
                 
-                print(f"✅ Fichier uploadé avec succès!")
-                print(f"   📝 Nom: {file.get('name')}")
-                print(f"   🔗 Lien: {file.get('webViewLink')}")
-                print(f"   📁 Parents: {file.get('parents', [])}")
-                print(f"   🆔 File ID: {file.get('id')}")
+                file = None
+                while file is None:
+                    status, file = request.next_chunk()
+                    if status:
+                        print(f"   Upload progress: {int(status.progress() * 100)}%")
                 
+                print(f"✅ Upload successful!")
+                print(f"   File ID: {file.get('id')}")
+                print(f"   File name: {file.get('name')}")
+                print(f"   View link: {file.get('webViewLink')}")
+                print(f"   File size: {file.get('size')} bytes")
+                
+                # Partage du fichier (optionnel - rendre accessible avec le lien)
+                try:
+                    service.permissions().create(
+                        fileId=file.get('id'),
+                        body={
+                            'role': 'reader',
+                            'type': 'anyone'
+                        }
+                    ).execute()
+                    print("   ✅ File shared publicly (anyone with link can view)")
+                except HttpError as e:
+                    print(f"   ⚠️  Could not share file publicly: {e}")
+                
+                return True
+                
+            except json.JSONDecodeError as e:
+                print(f"❌ Invalid JSON in service account credentials: {e}")
+                return False
+            except FileNotFoundError as e:
+                print(f"❌ File error: {e}")
+                return False
+            except HttpError as e:
+                print(f"❌ Google Drive API error: {e}")
+                return False
             except Exception as e:
-                print(f"❌ Erreur lors de l'upload: {e}")
-                raise
+                print(f"❌ Unexpected error: {e}")
+                return False
 
         if __name__ == '__main__':
-            upload_file()
+            success = upload_file_to_drive()
+            exit(0 if success else 1)
         EOF
         
+        # Exécution du script d'upload
         python upload_to_drive.py
       env:
-        FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
         
     - name: Upload UAT APK as artifact
       uses: actions/upload-artifact@v4
@@ -295,5 +337,5 @@ jobs:
     - name: Cleanup sensitive files
       if: always()
       run: |
-        rm -f /tmp/google_credentials.json
         rm -f .env.*
+        rm -f upload_to_drive.py
