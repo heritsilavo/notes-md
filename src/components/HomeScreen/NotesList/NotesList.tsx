@@ -7,6 +7,7 @@ import NoteItem from './NoteItem/NoteItem';
 import { generateRandomRatio } from '../../../functions/NotesList/generate-random-ratio';
 import { ThemeColor } from '../../../constants/colors';
 import { ResponsiveGrid } from '../../MyFlexibleGrid/responsive-grid/ResponsiveGrid';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface NotesListProps {
   liste: NoteDTO[];
@@ -99,6 +100,34 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
     </View>
   );
 
+  // Clés pour le local storage
+  const VIEW_TYPE_KEY = 'notesList_viewType';
+  const SORT_BY_KEY = 'notesList_sortBy';
+  const SORT_ORDER_KEY = 'notesList_sortOrder';
+
+  // Charger les valeurs du local storage au montage
+  React.useEffect(() => {
+    (async () => {
+      const storedViewType = await AsyncStorage.getItem(VIEW_TYPE_KEY);
+      const storedSortBy = await AsyncStorage.getItem(SORT_BY_KEY);
+      const storedSortOrder = await AsyncStorage.getItem(SORT_ORDER_KEY);
+      if (storedViewType === 'CARDS' || storedViewType === 'LISTE') setViewType(storedViewType as ViewType);
+      if (storedSortBy === 'date' || storedSortBy === 'name') setSortBy(storedSortBy as SortBy);
+      if (storedSortOrder === 'asc' || storedSortOrder === 'desc') setSortOrder(storedSortOrder as SortOrder);
+    })();
+  }, []);
+
+  // Sauvegarder dans le local storage à chaque changement
+  React.useEffect(() => {
+    AsyncStorage.setItem(VIEW_TYPE_KEY, viewType);
+  }, [viewType]);
+  React.useEffect(() => {
+    AsyncStorage.setItem(SORT_BY_KEY, sortBy);
+  }, [sortBy]);
+  React.useEffect(() => {
+    AsyncStorage.setItem(SORT_ORDER_KEY, sortOrder);
+  }, [sortOrder]);
+
   if (liste.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -137,7 +166,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
               setSortMenuVisible(false);
             }}
             title="Date (récent → ancien)"
-            leadingIcon="access-time"
+            leadingIcon={() => <Icon name="access-time" size={18} color="#6B7280" />} // Correction icône
             titleStyle={[
               styles.menuItemText,
               sortBy === "date" && sortOrder === "desc" ? styles.activeMenuText : undefined
@@ -150,7 +179,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
               setSortMenuVisible(false);
             }}
             title="Date (ancien → récent)"
-            leadingIcon="access-time"
+            leadingIcon={() => <Icon name="access-time" size={18} color="#6B7280" />} // Correction icône
             titleStyle={[
               styles.menuItemText,
               sortBy === "date" && sortOrder === "asc" ? styles.activeMenuText : undefined
@@ -164,7 +193,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
               setSortMenuVisible(false);
             }}
             title="Nom (A → Z)"
-            leadingIcon="sort-by-alpha"
+            leadingIcon={() => <Icon name="sort-by-alpha" size={18} color="#6B7280" />} // Correction icône
             titleStyle={[
               styles.menuItemText,
               sortBy === "name" && sortOrder === "asc" ? styles.activeMenuText : undefined
@@ -177,7 +206,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
               setSortMenuVisible(false);
             }}
             title="Nom (Z → A)"
-            leadingIcon="sort-by-alpha"
+            leadingIcon={() => <Icon name="sort-by-alpha" size={18} color="#6B7280" />} // Correction icône
             titleStyle={[
               styles.menuItemText,
               sortBy === "name" && sortOrder === "desc" ? styles.activeMenuText : undefined
@@ -212,7 +241,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
           <Menu.Item
             onPress={() => handleViewChange("CARDS")}
             title="Grille"
-            leadingIcon="grid-view"
+            leadingIcon={() => <Icon name="grid-view" size={18} color="#6B7280" />} // Correction icône
             titleStyle={[
               styles.menuItemText,
               viewType === "CARDS" ? styles.activeMenuText : undefined
@@ -221,7 +250,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
           <Menu.Item
             onPress={() => handleViewChange("LISTE")}
             title="Liste"
-            leadingIcon="view-list"
+            leadingIcon={() => <Icon name="view-list" size={18} color="#6B7280" />} // Correction icône
             titleStyle={[
               styles.menuItemText,
               viewType === "LISTE" ? styles.activeMenuText : undefined
