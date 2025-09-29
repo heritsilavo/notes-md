@@ -14,7 +14,9 @@ export interface NoteDTO {
   typenote: string
   user_id: string
   status: 'created' | 'synced' | 'modified' | 'deleted',
-  date_modification?: string // Optional, can be added later
+  date_modification?: string
+  parents: string[]
+  enfants: string[]
 }
 
 export const defaultNoteDTO: NoteDTO = {
@@ -32,5 +34,7 @@ export const defaultNoteDTO: NoteDTO = {
   typenote: 'texte', // Type par défaut
   user_id: '', // À remplir avec l'ID de l'utilisateur connecté
   status: 'created', // Statut initial
-  date_modification: undefined // Pas encore modifié
+  date_modification: undefined,
+  parents: [],
+  enfants: []
 };

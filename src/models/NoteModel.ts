@@ -19,5 +19,8 @@ export default class NoteModel extends Model {
   @text('supabase_id') supabase_id?: string
   @text('status') status!: 'created' | 'synced' | 'modified' | 'deleted'
   @text('user_id') user_id!: string
-
+  @json('parents', (raw) => Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : []))
+  parents!: string[]
+  @json('enfants', (raw) => Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : []))
+  enfants!: string[]
 }

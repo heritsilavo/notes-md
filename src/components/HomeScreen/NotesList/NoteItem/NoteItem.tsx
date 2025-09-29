@@ -90,6 +90,9 @@ const NoteItem: React.FC<{ item: NoteDTO; index: number }> = ({ item }) => {
             user_id: item.user_id,
             status: item.status,
             id: item.id,
+            parents: item.parents,
+            enfants: item.enfants,
+            date_modification: item.date_modification
         };
 
         const createdNote = await RemoteNoteService.create(newNote);

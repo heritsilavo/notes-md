@@ -35,12 +35,11 @@ export const RemoteNoteService = {
    * @returns La note créée ou une erreur
    */
   async create(note: NoteDTO): Promise<NoteDTO | null> {
-    const newNote: NoteDTO = {
-      ...note,
+    const newNote: NoteDTO = {...note,
       supabase_id: note.supabase_id || generateRandomId(),
       contenu_note: encrypt(note.contenu_note)
     };
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO, error: any } = await supabase
       .from('notes')
       .insert([newNote])
       .select()
@@ -62,7 +61,7 @@ export const RemoteNoteService = {
    * @returns La note correspondante ou une erreur
    */
   async getBySupabaseId(supabaseId: string): Promise<NoteDTO | null> {
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO, error: any } = await supabase
       .from('notes')
       .select('*')
       .eq('supabase_id', supabaseId)
@@ -97,7 +96,7 @@ export const RemoteNoteService = {
       cryptedUpdate.contenu_note = encrypt(updates.contenu_note)
     }
 
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO, error: any } = await supabase
       .from('notes')
       .update(cryptedUpdate)
       .eq('supabase_id', supabaseId)
@@ -120,7 +119,7 @@ export const RemoteNoteService = {
    * @returns {NoteDTO | null} La note correspondante ou null si non trouvée
    */
   async getByTitle(title: string): Promise<NoteDTO | null> {
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO, error: any } = await supabase
       .from('notes')
       .select('*')
       .neq('status', 'deleted')
@@ -150,7 +149,7 @@ export const RemoteNoteService = {
       cryptedUpdate.contenu_note = encrypt(updates.contenu_note)
     }
     
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO, error: any } = await supabase
       .from('notes')
       .update(cryptedUpdate)
       .neq('status', 'deleted')
@@ -213,7 +212,7 @@ export const RemoteNoteService = {
    * @returns Liste des notes à synchroniser ou une erreur
    */
   async getNotesToSync(userId: string): Promise<NoteDTO[] | null> {
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO[], error: any } = await supabase
       .from('notes')
       .select('*')
       .neq('status', 'deleted')
@@ -289,7 +288,7 @@ export const RemoteNoteService = {
       return this.getAll();
     }
 
-    const { data, error } = await supabase
+    const { data, error } : { data: NoteDTO[], error: any } = await supabase
       .from('notes')
       .select('*')
       .not('nom_note', 'in', `(${excludedTitles.map(title => `'${title}'`).join(',')})`)

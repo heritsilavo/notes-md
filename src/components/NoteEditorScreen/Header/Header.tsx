@@ -8,6 +8,7 @@ import CompareIcon from '../../../../icons/compare.svg';
 import ClipBoardTextIcon from '../../../../icons/Iconsax/Linear/clipboardtext.svg';
 import { useEditMode } from "../NoteEditorScreen";
 import { NoteDTO } from "../../../types/model/note";
+import Clipboard from '@react-native-clipboard/clipboard';
 
 
 type HeaderProps = {
@@ -18,9 +19,10 @@ type HeaderProps = {
   handleComparePress?: () => void;
   initialNote?: NoteDTO;
   isExistingNote: boolean;
+  content: string;
 };
 
-export const Header = ({ initialNote, handleComparePress, handleBackPress, handleSavePress, title, setTitle, isExistingNote }: HeaderProps) => {
+export const Header = ({ content , initialNote, handleComparePress, handleBackPress, handleSavePress, title, setTitle, isExistingNote }: HeaderProps) => {
 
   const { editMode, setEditMode } = useEditMode();
 
@@ -28,13 +30,18 @@ export const Header = ({ initialNote, handleComparePress, handleBackPress, handl
     setEditMode(() => !editMode);
   };
 
+  const onClipboardPress = () => {
+    // Copy note content to clipboard
+    Clipboard.setString(content);
+  }
+
   return <View style={styles.header}>
     <TouchableOpacity onPress={handleBackPress} style={styles.headerButton}>
       <ArrowLeftIcon width={25} height={25} />
     </TouchableOpacity>
     <TextInput value={title} editable={!isExistingNote} onChangeText={(t)=> !isExistingNote && setTitle(t)} style={styles.title_input} />
     <View style={{ flexDirection: "row", alignItems: 'center' }}>
-      <TouchableOpacity onPress={() => { }} style={styles.headerButton}>
+      <TouchableOpacity onPress={onClipboardPress} style={styles.headerButton}>
         <ClipBoardTextIcon width={25} height={25} />
       </TouchableOpacity>
       {

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { Menu, Button, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NoteDTO } from '../../../types/model/note';
@@ -8,6 +8,7 @@ import { generateRandomRatio } from '../../../functions/NotesList/generate-rando
 import { ThemeColor } from '../../../constants/colors';
 import { ResponsiveGrid } from '../../MyFlexibleGrid/responsive-grid/ResponsiveGrid';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NotesListeWithChilds } from './NotesListeWIthChilds';
 
 interface NotesListProps {
   liste: NoteDTO[];
@@ -282,21 +283,7 @@ export default function NotesList({ liste, onRefresh }: NotesListProps) {
           }
         />
       ) : (
-        <FlatList
-          data={sortedNotesWithRatios}
-          renderItem={renderListItem}
-          keyExtractor={(item) => item.id}
-          style={styles.list}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[ThemeColor.primary]}
-              tintColor={ThemeColor.primary}
-            />
-          }
-        />
+        <NotesListeWithChilds notes={sortedNotesWithRatios} />
       )}
     </View>
   );

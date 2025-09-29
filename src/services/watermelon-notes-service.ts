@@ -27,7 +27,10 @@ export const WatermelonNoteService = {
         rappel: note.rappel?.toISOString() || null,
         typenote: note.typenote,
         user_id: note.user_id,
-        status: note.status
+        status: note.status,
+        date_modification: note.date_modification?.toISOString() || undefined,
+        parents: note.parents,
+        enfants: note.enfants
       }));
   },
 
@@ -54,7 +57,10 @@ export const WatermelonNoteService = {
       rappel: note.rappel?.toISOString() || null,
       typenote: note.typenote,
       user_id: note.user_id,
-      status: note.status
+      status: note.status,
+      date_modification: note.date_modification?.toISOString() || undefined,
+      parents: note.parents,
+      enfants: note.enfants
     };
   },
 
@@ -80,6 +86,9 @@ export const WatermelonNoteService = {
         note.typenote = noteData.typenote;
         note.user_id = noteData.user_id;
         note.status = 'created';
+        note.date_modification = noteData.date_modification ? new Date(noteData.date_modification) : null;
+        note.parents = noteData.parents || [];
+        note.enfants = noteData.enfants || [];
       });
     });
 
@@ -97,7 +106,10 @@ export const WatermelonNoteService = {
       rappel: newNote!.rappel?.toISOString() || null,
       typenote: newNote!.typenote,
       user_id: newNote!.user_id,
-      status: newNote!.status
+      status: newNote!.status,
+      date_modification: newNote!.date_modification?.toISOString() || undefined,
+      parents: newNote!.parents,
+      enfants: newNote!.enfants
     };
   },
 
@@ -125,6 +137,10 @@ export const WatermelonNoteService = {
         if (noteData.synced !== undefined) updated.synced = noteData.synced;
         if (noteData.date_sync !== undefined)
           updated.date_sync = noteData.date_sync ? new Date(noteData.date_sync) : null;
+        if (noteData.date_modification !== undefined)
+          updated.date_modification = noteData.date_modification ? new Date(noteData.date_modification) : null;
+        if (noteData.parents) updated.parents = noteData.parents;
+        if (noteData.enfants) updated.enfants = noteData.enfants;
       });
     });
 
@@ -142,7 +158,10 @@ export const WatermelonNoteService = {
       rappel: updatedNote!.rappel?.toISOString() || null,
       typenote: updatedNote!.typenote,
       user_id: updatedNote!.user_id,
-      status: updatedNote!.status
+      status: updatedNote!.status,
+      date_modification: updatedNote!.date_modification?.toISOString() || undefined,
+      parents: updatedNote!.parents,
+      enfants: updatedNote!.enfants
     };
   },
 
@@ -194,7 +213,10 @@ export const WatermelonNoteService = {
       rappel: note.rappel?.toISOString() || null,
       typenote: note.typenote,
       user_id: note.user_id,
-      status: note.status
+      status: note.status,
+      date_modification: note.date_modification?.toISOString() || undefined,
+      parents: note.parents,
+      enfants: note.enfants
     }));
   },
 
@@ -220,7 +242,10 @@ export const WatermelonNoteService = {
       rappel: note.rappel?.toISOString() || null,
       typenote: note.typenote,
       user_id: note.user_id,
-      status: note.status
+      status: note.status,
+      date_modification: note.date_modification?.toISOString() || undefined,
+      parents: note.parents,
+      enfants: note.enfants
     }));
   },
 

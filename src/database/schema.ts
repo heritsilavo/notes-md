@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb'
 
 export const schema = appSchema({
-  version: 4,
+  version: 5,
   tables: [
     tableSchema({
       name: 'notes',
@@ -19,7 +19,9 @@ export const schema = appSchema({
         { name: 'rappel', type: 'number', isOptional: true },
         { name: 'typenote', type: 'string' },
         { name: 'status', type: 'string' },
-        { name: 'user_id', type: 'string' } 
+        { name: 'user_id', type: 'string' },
+        { name: 'parents', type: 'string' }, // Stocker comme stringifié JSON
+        { name: 'enfants', type: 'string' }  // Stocker comme stringifié JSON
       ]
     }),
     tableSchema({

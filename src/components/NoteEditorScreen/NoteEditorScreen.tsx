@@ -172,7 +172,9 @@ export default function NoteEditorScreen({ route, navigation }: NoteEditorScreen
         rappel: null,
         synced: isConnected,
         status: 'created',
-        user_id: DEFAULT_USER_ID
+        user_id: DEFAULT_USER_ID,
+        parents: [],
+        enfants: []
       };
 
       if (isConnected) {
@@ -488,6 +490,7 @@ export default function NoteEditorScreen({ route, navigation }: NoteEditorScreen
           handleComparePress={handleClickCompare}
           initialNote={initialNote}
           isExistingNote={isExistingNote}
+          content={note}
         />
 
         <CategoriesSelector
